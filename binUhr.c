@@ -34,8 +34,16 @@ void enterSleepMode(){
     //Funktionen festlegen
 
 
+// globale volatile Variablen für Steuerung der Interrupts
+// bspw. zum Entprellen der Schalter, ...
 
 void main(){
 
-    
+    // Setup erstellen
+
+
+    sei(); // Interrupts einschalten
+    while(1){
+        enterSleepMode();
+    }
 }

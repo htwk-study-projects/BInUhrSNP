@@ -1,7 +1,35 @@
 // TODO: Binäruhr mit Atmega mController realisieren
 // Aufbau nach selbstentworfenem Schaltplan mit selbst erstellter Platine
 
-
 // Binäruhr auf exterenen uhrenquarz als taktgeber 
 // Zählen per "Taktinterrupt" ansonsten sleepmode um Energie zu sparen
 // Zeitkorrektur nach messung im Labor
+
+
+
+// TODO: Zeitbasis generieren
+    // Uhrenquarz = 32.768Hz
+    // Prescaler und Timerwidth = 128 und 256
+    // damit bekommt man Zeitbasis 1s
+
+// TODO: SleepMode einstellen
+    // Power-save
+    // TWI können wir auch abschalten
+    // Watch Dog ausmachen FUSEBIT
+
+// TODO: Zeitzählung über Interrupts
+    // Interrupt muss bis 60s zählen für Minute -> 6 LED Kette hoch
+    // Interrupt muss bei 60min zählen -> 5 LED Kette hoch, 6 LED Kette reset
+    // Interrupt muss bei 24h -> 5 LED Kette reset
+    // Zeitkorrektur ausführen
+
+    // LEDs über Pulsweitenmodulation maximal 25% Leistung
+
+// TODO: 3 Buttons per Interrupt
+    //Funktionen festlegen
+
+
+void main(){
+
+    
+}

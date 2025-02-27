@@ -16,6 +16,11 @@
     // Power-save
     // TWI können wir auch abschalten
     // Watch Dog ausmachen FUSEBIT
+void enterSleepMode(){
+    set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+    //usw...
+}
+
 
 // TODO: Zeitzählung über Interrupts
     // Interrupt muss bis 60s zählen für Minute -> 6 LED Kette hoch
@@ -27,6 +32,7 @@
 
 // TODO: 3 Buttons per Interrupt
     //Funktionen festlegen
+
 
 
 void main(){

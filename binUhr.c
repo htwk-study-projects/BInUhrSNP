@@ -5,12 +5,23 @@
 // Zählen per "Taktinterrupt" ansonsten sleepmode um Energie zu sparen
 // Zeitkorrektur nach messung im Labor
 
+// Includes
 
 
 // TODO: Zeitbasis generieren
     // Uhrenquarz = 32.768Hz
     // Prescaler und Timerwidth = 128 und 256
     // damit bekommt man Zeitbasis 1s
+
+void initTimebase(){
+    ASSR |= (1 << AS2);
+
+    TIMSK2 |= (1 << TOIE2); // Overflow Interrupt, 8Bit register -> 256
+    TCCR2B = (1 << CS22) | (1 << CS20);  // Prescaler 128
+
+    TCCR2A = 0; // normaler modus, kein CTC, kein Compare
+
+}
 
 // TODO: SleepMode einstellen
     // Power-save
@@ -40,10 +51,18 @@ void enterSleepMode(){
 void main(){
 
     // Setup erstellen
+    initTimebase();
 
 
     sei(); // Interrupts einschalten
     while(1){
         enterSleepMode();
     }
+}
+
+// TODO: Interrupts
+
+// Timer2 Interrupt
+ISR(TIMER2_OVF_vect){
+    //Zeit zählen, register davon abhängig ändern
 }

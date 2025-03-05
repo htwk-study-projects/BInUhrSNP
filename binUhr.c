@@ -8,11 +8,11 @@
 // Includes
 
 
-// TODO: Zeitbasis generieren
-    // Uhrenquarz = 32.768Hz
-    // Prescaler und Timerwidth = 128 und 256
-    // damit bekommt man Zeitbasis 1s
-
+/** TODO: Zeitbasis generieren
+ * Uhrenquarz = 32.768Hz
+ * Prescaler und Timerwidth = 128 und 256
+ * damit bekommt man Zeitbasis 1s
+*/
 void initTimebase(){
     ASSR |= (1 << AS2);
 
@@ -23,10 +23,22 @@ void initTimebase(){
 
 }
 
-// TODO: SleepMode einstellen
-    // Power-save
-    // TWI können wir auch abschalten
-    // Watch Dog ausmachen FUSEBIT
+/** TODO: Pin Initalisierung
+ * PC0 - PC5 Minuten Ausgang
+ * PD0, PD1 und PD5-PD7 Stunden Ausgang
+ * PD2-PD4 Buttons Eingang
+ * 
+*/
+void initPorts(){
+    DDRC |= 0b00111111;
+    DDRD |= 0b11100011;
+}
+
+/** TODO: SleepMode einstellen
+* Power-save
+* TWI können wir auch abschalten
+* Watch Dog ausmachen FUSEBIT
+*/
 void enterSleepMode(){
     set_sleep_mode(SLEEP_MODE_PWR_SAVE);
     //usw...
@@ -47,10 +59,14 @@ void enterSleepMode(){
 
 // globale volatile Variablen für Steuerung der Interrupts
 // bspw. zum Entprellen der Schalter, ...
+volatile uint_8 s = 0;
+volatile uint_8 min = 0;
+volatile uint_8 h = 0;
 
 void main(){
 
     // Setup erstellen
+    initPorts();
     initTimebase();
 
 
@@ -64,5 +80,13 @@ void main(){
 
 // Timer2 Interrupt
 ISR(TIMER2_OVF_vect){
-    //Zeit zählen, register davon abhängig ändern
+    s = (s + 1) % 60;
+    if (s == 0){
+        min = (min + 1) % 60;
+        if(min == 0){
+            h = (h + 1) % 24;
+        }
+        PORTC = (PORTC & 0b11000000) | (min & 0b00111111); 
+        PORTD = (PORTD & 0b00011100) | (h & 0b00000011) | ((h & 0b00011100) << 3);
+    }
 }

@@ -6,6 +6,7 @@
 // Zeitkorrektur nach messung im Labor
 
 // Includes
+#define F_CPU 1000000UL
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <avr/sleep.h>
@@ -36,11 +37,18 @@ void initPorts(){
 }
 
 /** TODO: PWM für Minuten und Stunden festlegen
- * Minuten an OC1B
- * Stunden an OC1A
+ * 
 */
 void initPWM(){
-    TCCR1B |= 
+    TCCR1B |= (1 << CS10);
+
+    OCR1A |= 12; //Stunden
+    OCR1B |= 12; //Minuten
+
+    TCCR1A |= (1 << WGM10);
+    TCCR1B |= (1 << WGM12);
+
+    TCCR1A |= (1 << COM1A1) | (1 << COM1B1) | (1 << COM1A0) | (1 << COM1B0);
 }
 
 /** TODO: SleepMode einstellen
@@ -71,10 +79,11 @@ void main(){
     initPorts();
     initTimebase();
     initSleepMode();
+    initPWM();
 
     sei(); // Interrupts einschalten
     while(1){
-        sleep_mode();
+        //sleep_mode();
     }
 }
 

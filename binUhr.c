@@ -6,7 +6,9 @@
 // Zeitkorrektur nach messung im Labor
 
 // Includes
-
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <avr/sleep.h>
 
 /** TODO: Zeitbasis generieren
  * Uhrenquarz = 32.768Hz
@@ -18,9 +20,7 @@ void initTimebase(){
 
     TIMSK2 |= (1 << TOIE2); // Overflow Interrupt, 8Bit register -> 256
     TCCR2B = (1 << CS22) | (1 << CS20);  // Prescaler 128
-
     TCCR2A = 0; // normaler modus, kein CTC, kein Compare
-
 }
 
 /** TODO: Pin Initalisierung
@@ -32,24 +32,26 @@ void initTimebase(){
 void initPorts(){
     DDRC |= 0b00111111;
     DDRD |= 0b11100011;
+    DDRB |= 0b00000110;
+}
+
+/** TODO: PWM für Minuten und Stunden festlegen
+ * Minuten an OC1B
+ * Stunden an OC1A
+*/
+void initPWM(){
+    TCCR1B |= 
 }
 
 /** TODO: SleepMode einstellen
-* Power-save
-* TWI können wir auch abschalten
-* Watch Dog ausmachen FUSEBIT
+ * Power-save
+ * TWI können wir auch abschalten
+ * Watch Dog ausmachen FUSEBIT
 */
-void enterSleepMode(){
+void initSleepMode(){
     set_sleep_mode(SLEEP_MODE_PWR_SAVE);
     //usw...
 }
-
-
-// TODO: Zeitzählung über Interrupts
-    // Interrupt muss bis 60s zählen für Minute -> 6 LED Kette hoch
-    // Interrupt muss bei 60min zählen -> 5 LED Kette hoch, 6 LED Kette reset
-    // Interrupt muss bei 24h -> 5 LED Kette reset
-    // Zeitkorrektur ausführen
 
     // LEDs über Pulsweitenmodulation maximal 25% Leistung
 
@@ -68,11 +70,11 @@ void main(){
     // Setup erstellen
     initPorts();
     initTimebase();
-
+    initSleepMode();
 
     sei(); // Interrupts einschalten
     while(1){
-        enterSleepMode();
+        sleep_mode();
     }
 }
 
@@ -87,6 +89,6 @@ ISR(TIMER2_OVF_vect){
             h = (h + 1) % 24;
         }
         PORTC = (PORTC & 0b11000000) | (min & 0b00111111); 
-        PORTD = (PORTD & 0b00011100) | (h & 0b00000011) | ((h & 0b00011100) << 3);
+        PORTD = (PORTD & 0b00011100) | ((h & 0b00000001) << 7) | ((h & 0b00000010) << 5) | ((h & 0b00000100) << 3) | ((h & 0b00001000) >> 2) | ((h & 0b000010000) >> 4);
     }
 }

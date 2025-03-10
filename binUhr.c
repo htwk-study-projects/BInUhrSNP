@@ -24,10 +24,20 @@ void initTimebase(){
     TCCR2A = 0; // normaler modus, kein CTC, kein Compare
 }
 
+/**
+ * LED Register setzen
+*/
+void updateLEDRegister(){
+    PORTC = (PORTC & 0b11000000) | (min & 0b00111111); 
+    PORTD = (PORTD & 0b00011100) | ((h & 0b00000001) << 7) | ((h & 0b00000010) << 5) | ((h & 0b00000100) << 3) | ((h & 0b00001000) >> 2) | ((h & 0b000010000) >> 4);
+
+}
+
 /** TODO: Pin Initalisierung
  * PC0 - PC5 Minuten Ausgang
  * PD0, PD1 und PD5-PD7 Stunden Ausgang
  * PD2-PD4 Buttons Eingang
+ * B1 und B2 Ausgang gemeinsamer Ground LEDs
  * 
 */
 void initPorts(){
@@ -58,20 +68,25 @@ void initPWM(){
 */
 void initSleepMode(){
     set_sleep_mode(SLEEP_MODE_PWR_SAVE);
-    //usw...
-}
+    
+    PRR |= (1 << PRTWI); 
+    //Watchdog noch aus, ADC ausmachen wenn der mode das nicht schon automatisch erledigt
 
-    // LEDs über Pulsweitenmodulation maximal 25% Leistung
+}
 
 // TODO: 3 Buttons per Interrupt
     //Funktionen festlegen
 
+void initPinInterrupts(){
+    EIMASK |= (1 << INT0) | (1 << INT1);
+    // ob der interrupt auf Flanke oder Level reagiert noch einstellen
+}
 
 // globale volatile Variablen für Steuerung der Interrupts
 // bspw. zum Entprellen der Schalter, ...
-volatile uint_8 s = 0;
-volatile uint_8 min = 0;
-volatile uint_8 h = 0;
+volatile uint8_t s = 0;
+volatile uint8_t min = 0;
+volatile uint8_t h = 0;
 
 void main(){
 
@@ -80,6 +95,7 @@ void main(){
     initTimebase();
     initSleepMode();
     initPWM();
+    initPinInterrupts();
 
     sei(); // Interrupts einschalten
     while(1){
@@ -97,7 +113,10 @@ ISR(TIMER2_OVF_vect){
         if(min == 0){
             h = (h + 1) % 24;
         }
-        PORTC = (PORTC & 0b11000000) | (min & 0b00111111); 
-        PORTD = (PORTD & 0b00011100) | ((h & 0b00000001) << 7) | ((h & 0b00000010) << 5) | ((h & 0b00000100) << 3) | ((h & 0b00001000) >> 2) | ((h & 0b000010000) >> 4);
     }
+}
+
+// Taster 1, INT0
+ISR(INT0_vect){
+    updateLEDRegister();
 }

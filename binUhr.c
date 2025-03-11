@@ -10,6 +10,17 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <avr/sleep.h>
+#include <util/delay.h>
+
+// globale volatile Variablen f�r Steuerung der Interrupts
+// bspw. zum Entprellen der Schalter, ...
+volatile uint8_t s = 0;
+volatile uint8_t min = 0;
+volatile uint8_t h = 0;
+
+volatile uint8_t prell = 0;
+volatile uint8_t show = 0;
+volatile uint8_t brightness = 12;
 
 /** TODO: Zeitbasis generieren
  * Uhrenquarz = 32.768Hz
@@ -30,7 +41,7 @@ void initTimebase(){
 void updateLEDRegister(){
     PORTC = (PORTC & 0b11000000) | (min & 0b00111111); 
     PORTD = (PORTD & 0b00011100) | ((h & 0b00000001) << 7) | ((h & 0b00000010) << 5) | ((h & 0b00000100) << 3) | ((h & 0b00001000) >> 2) | ((h & 0b000010000) >> 4);
-
+	DDRB |= 0b00000110; 
 }
 
 /** TODO: Pin Initalisierung
@@ -43,7 +54,7 @@ void updateLEDRegister(){
 void initPorts(){
     DDRC |= 0b00111111;
     DDRD |= 0b11100011;
-    DDRB |= 0b00000110;
+	PORTD |= 0b00011100;
 }
 
 /** TODO: PWM für Minuten und Stunden festlegen
@@ -52,8 +63,8 @@ void initPorts(){
 void initPWM(){
     TCCR1B |= (1 << CS10);
 
-    OCR1A |= 12; //Stunden
-    OCR1B |= 12; //Minuten
+    OCR1A = brightness; //Stunden
+    OCR1B = brightness; //Minuten
 
     TCCR1A |= (1 << WGM10);
     TCCR1B |= (1 << WGM12);
@@ -68,38 +79,49 @@ void initPWM(){
 */
 void initSleepMode(){
     set_sleep_mode(SLEEP_MODE_PWR_SAVE);
-    
+    SMCR |= (1 << SE);
     PRR |= (1 << PRTWI); 
-    //Watchdog noch aus, ADC ausmachen wenn der mode das nicht schon automatisch erledigt
+	PRR |= (1 << PRADC); 
+    //Watchdog noch aus
 
 }
 
-// TODO: 3 Buttons per Interrupt
-    //Funktionen festlegen
-
+/** TODO: 3 Buttons per Interrupt
+*/
 void initPinInterrupts(){
-    EIMASK |= (1 << INT0) | (1 << INT1);
-    // ob der interrupt auf Flanke oder Level reagiert noch einstellen
+   EIMSK |= (1 << INT0) | (1 << INT1);
+   EICRA |= (1 << ISC11) | (1 << ISC01);
+   PCICR |= (1 << PCIE2);
+   PCMSK2 |= (1 << PCINT20);
 }
 
-// globale volatile Variablen für Steuerung der Interrupts
-// bspw. zum Entprellen der Schalter, ...
-volatile uint8_t s = 0;
-volatile uint8_t min = 0;
-volatile uint8_t h = 0;
+
 
 void main(){
-
     // Setup erstellen
     initPorts();
     initTimebase();
     initSleepMode();
     initPWM();
     initPinInterrupts();
-
-    sei(); // Interrupts einschalten
+    sei();
     while(1){
-        //sleep_mode();
+		if(prell > 0){
+			updateLEDRegister();
+			_delay_ms(10);
+		 	prell--;
+		}
+		else if(show > 0){
+			DDRB |= 0b00000110;
+    		OCR1A = brightness; //Stunden
+    		OCR1B = brightness; //Minuten
+			_delay_ms(10);
+			show--;
+		}
+		else{
+			DDRB &= ~(0b00000110); 
+        	sleep_mode();
+		}
     }
 }
 
@@ -116,7 +138,30 @@ ISR(TIMER2_OVF_vect){
     }
 }
 
-// Taster 1, INT0
+// Taster 1, INT0, Minuten
 ISR(INT0_vect){
-    updateLEDRegister();
+	if(prell == 0){
+		min = (min + 1) % 60;
+		s = 0;
+		prell = 30;
+	}
+	
+}
+
+// Taster 2, INT1, Stunden
+ISR(INT1_vect){
+	if(prell == 0){
+		h = (h + 1) % 24;
+		s = 0;
+		prell = 30;
+	}
+	
+}
+
+// Taster 3, PCINT20, Helligkeit
+ISR(PCINT2_vect){
+	if(show < 200){
+		show = 255;
+		brightness = (brightness + 50) % 150;
+	}
 }

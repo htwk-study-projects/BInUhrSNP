@@ -20,7 +20,7 @@ volatile uint8_t h = 0;
 
 volatile uint8_t prell = 0;
 volatile uint8_t show = 0;
-volatile uint8_t brightness = 12;
+volatile uint8_t brightness = 100;
 
 /** TODO: Zeitbasis generieren
  * Uhrenquarz = 32.768Hz
@@ -112,9 +112,9 @@ void main(){
 		 	prell--;
 		}
 		else if(show > 0){
-			DDRB |= 0b00000110;
     		OCR1A = brightness; //Stunden
     		OCR1B = brightness; //Minuten
+            updateLEDRegister();
 			_delay_ms(10);
 			show--;
 		}

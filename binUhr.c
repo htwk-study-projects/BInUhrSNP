@@ -12,11 +12,14 @@
 #include <avr/sleep.h>
 #include <util/delay.h>
 
-// globale volatile Variablen f�r Steuerung der Interrupts
+// globale volatile Variablen, Steuerung der Interrupts
 // bspw. zum Entprellen der Schalter, ...
 volatile uint8_t s = 0;
 volatile uint8_t min = 0;
 volatile uint8_t h = 0;
+
+volatile uint16_t timeCor = 0;
+volatile uint16_t timeCorThreshold = 26656;
 
 volatile uint8_t prell = 0;
 volatile uint8_t show = 0;
@@ -81,9 +84,7 @@ void initSleepMode(){
     set_sleep_mode(SLEEP_MODE_PWR_SAVE);
     SMCR |= (1 << SE);
     PRR |= (1 << PRTWI); 
-	PRR |= (1 << PRADC); 
-    //Watchdog noch aus
-
+	PRR |= (1 << PRADC);
 }
 
 /** TODO: 3 Buttons per Interrupt
@@ -94,7 +95,6 @@ void initPinInterrupts(){
    PCICR |= (1 << PCIE2);
    PCMSK2 |= (1 << PCINT20);
 }
-
 
 
 void main(){
@@ -129,11 +129,27 @@ void main(){
 
 // Timer2 Interrupt
 ISR(TIMER2_OVF_vect){
-    s = (s + 1) % 60;
-    if (s == 0){
-        min = (min + 1) % 60;
-        if(min == 0){
-            h = (h + 1) % 24;
+
+
+	//PORTC ^=1; //zum Testen T=2	
+
+    timeCor++;
+    
+    if(timeCor == timeCorThreshold){
+        timeCor = 0;
+    } 
+	else {
+        s = s + 1;
+        if(s == 60){
+            s = 0;
+            min++;
+            if(min == 60){
+                min = 0;
+                h++;
+                if(h == 24){
+                    h = 0;
+                }
+            }
         }
     }
 }

@@ -135,12 +135,12 @@ ISR(TIMER2_OVF_vect){
 
     timeCor++;
     
-    if(timeCor == timeCorThreshold){
+    if(timeCor >= timeCorThreshold){
         timeCor = 0;
     } 
 	else {
-        s = s + 1;
-        if(s == 60){
+        s++;
+        if(s == 60){$
             s = 0;
             min++;
             if(min == 60){
